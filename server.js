@@ -114,7 +114,7 @@ function cacheResult(resourceUrl, res, body) {
         body: body,
         headers: headers
       };
-      cache.store(resourceUrl, data, 1000*20); // cacheControlHeaders.maxAge);
+      cache.store(resourceUrl, data, cacheControlHeaders.maxAge);
   }
 
   // TODO: Add backwards compatibility for HTTP 1.0 Cache control headers
