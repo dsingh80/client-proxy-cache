@@ -23,15 +23,18 @@ class InMemoryCache {
   }
 
 
-  store(id, data, expiresIn) {
+  store(id, data, expiresAt) {
     this.cache.delete(id);  // invalidate any existing caches for this resource
     this.cache.set(id, {
-      expiresAt: Date.now() + expiresIn,
+      expiresAt,
       data
     });
-
+    console.log('Caching', id);
     if(this.cache.size > this.maxSize) {
-      let leastRecentlyUsed = this.cache.keys()[0]; // Get the oldest inserted key
+      let leastRecentlyUsed;
+      for(let key of this.cache.keys()) {
+        leastRecentlyUsed = key; break; // Get the oldest inserted key (aka first element in map)
+      }
       this.cache.delete(leastRecentlyUsed);
     }
   }
