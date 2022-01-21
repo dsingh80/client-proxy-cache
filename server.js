@@ -91,7 +91,7 @@ function cacheResult(resourceUrl, headers, body) {
   if(headers['cache-control']) {
     // HTTP 1.1 - Current standard
     let cacheControlHeaders = CacheControlParse(headers['cache-control']);
-    if (cacheControlHeaders.private) { console.log('Cache-Control is private. Not going to cache'); return; }
+    if (cacheControlHeaders.private) { console.log('Cache-Control is private. Not storing in cache'); return; }
       let expiresIn = cacheControlHeaders.maxAge; // max-age is ttl from when the response is *generated* so we have to account for age that the response has been alive in the calculation
       if(headers['age']) { expiresIn -= parseInt(headers['age']); }
       cache.store(resourceUrl, data, Date.now() + expiresIn);
