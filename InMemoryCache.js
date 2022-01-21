@@ -1,25 +1,31 @@
 'use strict';
 
+const Cache = require('./Cache');
 
-class InMemoryCache {
+
+class InMemoryCache extends Cache{
   constructor(size) {
+    super(size);
     this.cache = new Map();
-    this.maxSize = size;
   }
 
-  fetch(resource) {
-    let result = this.cache.get(resource);
-    if(result) {
-      if(new Date(result.expiresAt) < new Date()) {
-        console.log('CACHE MISS (expired)');
-        this.cache.delete(resource);
-        return null;
+  fetch(id) {
+    return new Promise((resolve, reject) => { // We return a promise here so that we can maintain the interface for other cache strategies
+      let result = this.cache.get(id);
+      if (result) {
+        if (new Date(result.expiresAt) < new Date()) {
+          console.log('CACHE MISS (expired)');
+          this.cache.delete(id);
+          reject();
+          return;
+        }
+        console.log('CACHE HIT');
+        resolve(result.data);
+        return;
       }
-      console.log('CACHE HIT');
-      return result.data;
-    }
-    console.log('CACHE MISS');
-    return null;
+      console.log('CACHE MISS');
+      reject();
+    });
   }
 
 

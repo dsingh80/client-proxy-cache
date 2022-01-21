@@ -4,21 +4,13 @@ require('dotenv').config();
 
 const express = require('express'),
   morgan = require('morgan'),
-  Cache = require('./InMemoryCache'),
+  Cache = require('./DatabaseCache'),
   utils = require('./utils'),
   URL = require('url').URL,
-  CacheControlParse = require('@tusbar/cache-control').parse,
-  http = require('http'),
-  https = require('https'),
-  fs = require('fs'),
-  path = require('path');
+  CacheControlParse = require('@tusbar/cache-control').parse;
 
 const app = express(),
   cache = new Cache(process.env.CACHE_SIZE);
-
-// Certificate
-let sslPrivateKey = fs.readFileSync(path.resolve(process.env.SSL_KEY_PATH), 'utf8');
-let sslCertificate = fs.readFileSync(path.resolve(process.env.SSL_CERT_PATH), 'utf8');
 
 
 /**
@@ -54,12 +46,14 @@ function formatProxyRequest(req, res, next) {
 }
 
 
-function checkCache(req, res, next) {
-  let result = cache.fetch(res.locals.proxyUrl);
-  if(!result) { return next(); }
-  else {
+async function checkCache(req, res, next) {
+  try {
+    let result = await cache.fetch(res.locals.proxyUrl);
     Object.keys(result.headers).forEach((header) => res.set(header, result.headers[header]));
     res.status(304).send(result.body);
+  }
+  catch {
+    next();
   }
 }
 
@@ -113,6 +107,7 @@ function cacheResult(resourceUrl, headers, body) {
     cache.store(resourceUrl, data, Date.now() + expiresIn);
   }
 }
+
 
 /**
  * =====================================================
