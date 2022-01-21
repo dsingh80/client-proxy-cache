@@ -81,55 +81,6 @@ function proxyRequestFollowRedirects(req, res) {
 }
 
 
-function proxyRequest(req, res) {
-  if(!res.locals.proxyUrl) { res.status(500); console.error('No proxyUrl provided to proxyRequest'); return; }
-  if(!res.locals.proxyOptions) { res.status(500); console.error('No proxyOptions provided to proxyRequest'); return; }
-
-  let protocolModule = http;
-  if(res.locals.proxyOptions.port === 443) {
-    console.log('Upgrading to HTTPS');
-    protocolModule = https;
-    res.locals.proxyOptions.key = sslPrivateKey;
-    res.locals.proxyOptions.cert = sslCertificate;
-    res.locals.proxyOptions.agent = false;
-  }
-
-  console.log('Proxying request to', res.locals.proxyUrl);
-  let proxyReq = protocolModule.request(res.locals.proxyUrl, res.locals.proxyOptions, function(proxyRes) {
-    if(proxyRes.headers) {
-      // Forward headers to the response
-      Object.keys(proxyRes.headers).forEach((header) => {
-        res.set(header, proxyRes.headers[header]);
-      });
-      if (proxyRes.headers['content-type']) {
-        if (proxyRes.headers['content-type'].indexOf('text/html') === -1) {
-          proxyRes.pipe(res);
-          return;
-        }
-      }
-    }
-
-    let body = '';
-    proxyRes.on('data', (chunk) => { body += chunk; });
-    proxyRes.on('end', () => {
-      cacheResult(res.locals.proxyUrl, proxyRes.headers, body);
-      res.status(200).send(body);   // TODO: This works fine for cURL but the browser's probably expecting gzip and will fail to decode on frontend
-    });
-  });
-
-  proxyReq.on('error', (err) => {
-    console.error(err);
-    if(!req.headersSent) {
-      res.status(400).json({status: 'failure', error: err});
-    }
-  });
-
-  if(req.body) { proxyReq.write(req.body); }
-  proxyReq.end();
-}
-
-
-
 /**
  * =====================================================
  * Misc Functions
